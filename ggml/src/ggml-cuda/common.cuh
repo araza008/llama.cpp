@@ -1035,6 +1035,7 @@ struct ggml_cuda_device_info {
     int device_count;
 
     struct cuda_device_info {
+        int     physical_device;                // physical device ID (for virtual device mapping)
         int     cc;                             // compute capability
         int     nsm;                            // number of streaming multiprocessors
         size_t  smpb;                           // max. shared memory per block
@@ -1321,7 +1322,8 @@ struct ggml_cuda_stream_context {
 };
 
 struct ggml_backend_cuda_context {
-    int device;
+    int device;              // virtual device ID
+    int physical_device;     // physical device ID (for actual CUDA operations)
     std::string name;
     cudaEvent_t copy_event = nullptr;
 
@@ -1368,6 +1370,7 @@ struct ggml_backend_cuda_context {
 
     explicit ggml_backend_cuda_context(int device) :
         device(device),
+        physical_device(ggml_cuda_info().devices[device].physical_device),
         name(GGML_CUDA_NAME + std::to_string(device)) {
     }
 
@@ -1376,8 +1379,9 @@ struct ggml_backend_cuda_context {
     ~ggml_backend_cuda_context();
 
     cudaStream_t stream(int device, int stream) {
+        int phys_dev = ggml_cuda_info().devices[device].physical_device;
         if (streams[device][stream] == nullptr) {
-            ggml_cuda_set_device(device);
+            ggml_cuda_set_device(phys_dev);
             CUDA_CHECK(cudaStreamCreateWithFlags(&streams[device][stream], cudaStreamNonBlocking));
         }
         return streams[device][stream];
@@ -1388,8 +1392,9 @@ struct ggml_backend_cuda_context {
     ggml_cuda_stream_context & stream_context() { return concurrent_stream_context; }
 
     cublasHandle_t cublas_handle(int device) {
+        int phys_dev = ggml_cuda_info().devices[device].physical_device;
         if (cublas_handles[device] == nullptr) {
-            ggml_cuda_set_device(device);
+            ggml_cuda_set_device(phys_dev);
             CUBLAS_CHECK(cublasCreate(&cublas_handles[device]));
             CUBLAS_CHECK(cublasSetMathMode(cublas_handles[device], CUBLAS_TF32_TENSOR_OP_MATH));
         }
