@@ -1035,6 +1035,7 @@ struct ggml_cuda_device_info {
     int device_count;
 
     struct cuda_device_info {
+        int     physical_device;                // physical device ID (for virtual device mapping)
         int     cc;                             // compute capability
         int     nsm;                            // number of streaming multiprocessors
         size_t  smpb;                           // max. shared memory per block
@@ -1330,7 +1331,8 @@ struct ggml_cuda_stream_context {
 };
 
 struct ggml_backend_cuda_context {
-    int device;
+    int device;              // virtual device ID
+    int physical_device;     // physical device ID (for actual CUDA operations)
     std::string name;
     cudaEvent_t copy_event = nullptr;
 
@@ -1377,6 +1379,7 @@ struct ggml_backend_cuda_context {
 
     explicit ggml_backend_cuda_context(int device) :
         device(device),
+        physical_device(ggml_cuda_info().devices[device].physical_device),
         name(GGML_CUDA_NAME + std::to_string(device)) {
     }
 
