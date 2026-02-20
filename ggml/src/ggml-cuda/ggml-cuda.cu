@@ -5149,7 +5149,7 @@ ggml_backend_reg_t ggml_backend_cuda_reg() {
                 }
 
                 char pci_bus_id[16] = {};
-                snprintf(pci_bus_id, sizeof(pci_bus_id), "%04x:%02x:%02x.0", prop.pciDomainID, prop.pciBusID, prop.pciDeviceID);
+                snprintf(pci_bus_id, sizeof(pci_bus_id), "%04x:%02x:%02x:%02x.0", prop.pciDomainID, prop.pciBusID, prop.pciDeviceID, i);
                 dev_ctx->pci_bus_id = pci_bus_id;
                 dev_ctx->op_offload_min_batch_size = min_batch_size;
 
